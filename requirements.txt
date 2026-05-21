@@ -1,0 +1,9 @@
+# Runtime dependencies (pinned from project venv)
+asgiref==3.11.1
+Django==6.0.5
+django-environ==0.13.0
+djangorestframework==3.17.1
+djangorestframework-simplejwt==5.5.1
+mysqlclient==2.2.8
+PyJWT==2.12.1
+sqlparse==0.5.5
