@@ -156,6 +156,8 @@ Settings are loaded from a `.env` file at the project root using **django-enviro
 | `SECRET_KEY` | Yes | Django signing key; keep secret | Unique value in `.env` (not committed) | Strong random key; never reuse the dev key |
 | `DEBUG` | Yes | Enables debug mode and extra error pages | `True` | `False` |
 | `ALLOWED_HOSTS` | Yes | Comma-separated hostnames the app will serve | `localhost,127.0.0.1` | Your domain(s), e.g. `api.example.com` |
+| `JWT_ACCESS_TOKEN_LIFETIME_MINUTES` | No | How long the **access** token works (default `60`) | `60` | Shorter in production if possible (e.g. `15–30`) |
+| `JWT_REFRESH_TOKEN_LIFETIME_DAYS` | No | How long the **refresh** token works (default `7`) | `7` | `1–30` depending on security policy |
 
 Copy the template and edit locally:
 
@@ -420,6 +422,40 @@ Response (`200`):
   "refresh": "<refresh-token>"
 }
 ```
+
+### Token lifetimes
+
+This project uses [Simple JWT](https://django-rest-framework-simplejwt.readthedocs.io/) with two tokens:
+
+| Token | Purpose | Default (before `.env`) | Configured via |
+|-------|---------|-------------------------|----------------|
+| **access** | Sent as `Authorization: Bearer …` on API calls | 5 minutes | `JWT_ACCESS_TOKEN_LIFETIME_MINUTES` |
+| **refresh** | Used only at `/api/auth/refresh/` to get a new access token | 1 day | `JWT_REFRESH_TOKEN_LIFETIME_DAYS` |
+
+Extend lifetimes in `.env` (then restart the server or rebuild Docker):
+
+```env
+JWT_ACCESS_TOKEN_LIFETIME_MINUTES=120
+JWT_REFRESH_TOKEN_LIFETIME_DAYS=30
+```
+
+Settings mapping in `main/settings.py`:
+
+```python
+SIMPLE_JWT = {
+  "ACCESS_TOKEN_LIFETIME": timedelta(minutes=...),
+  "REFRESH_TOKEN_LIFETIME": timedelta(days=...),
+}
+```
+
+**Notes:**
+
+- Only the **access** token is sent on patient/auth API calls. When it expires, call **`POST /api/auth/refresh/`** with the refresh token — you do not need to log in again until the refresh token expires.
+- Longer access tokens are simpler for clients but less secure if leaked. Prefer a shorter access token plus refresh (e.g. 15–60 min access, 7–30 days refresh).
+- Existing tokens keep their original expiry until you log in again and get new ones.
+- For Docker: `docker compose up --build -d` after changing `.env`.
+
+Other `SIMPLE_JWT` options (rotation, blacklist) are documented in the [Simple JWT settings](https://django-rest-framework-simplejwt.readthedocs.io/en/latest/settings.html) guide.
 
 ### Use tokens on protected requests
 

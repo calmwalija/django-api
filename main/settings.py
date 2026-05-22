@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 import os
+from datetime import timedelta
 from pathlib import Path
 import environ
 
@@ -50,6 +51,17 @@ REST_FRAMEWORK = {
     "rest_framework.permissions.IsAuthenticated",
   ),
 }
+
+# Simple JWT — lifetimes configurable via .env (see .env.example)
+SIMPLE_JWT = {
+  "ACCESS_TOKEN_LIFETIME": timedelta(
+    minutes=env.int("JWT_ACCESS_TOKEN_LIFETIME_MINUTES", default=60)
+  ),
+  "REFRESH_TOKEN_LIFETIME": timedelta(
+    days=env.int("JWT_REFRESH_TOKEN_LIFETIME_DAYS", default=7)
+  ),
+}
+
 MIDDLEWARE = [
   'django.middleware.security.SecurityMiddleware',
   'django.contrib.sessions.middleware.SessionMiddleware',
