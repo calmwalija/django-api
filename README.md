@@ -14,6 +14,7 @@ A Django REST API for managing **patient records** with **JWT authentication** a
 - [Configuration](#configuration)
 - [Database setup](#database-setup)
 - [Running the server](#running-the-server)
+- [Docker deployment](#docker-deployment)
 - [Authentication](#authentication)
 - [Patient data model](#patient-data-model)
 - [API overview](#api-overview)
@@ -63,7 +64,11 @@ DjangoApi/
 ├── manage.py
 ├── requirements.txt      # Runtime Python dependencies
 ├── requirements-dev.txt  # Optional dev/typing dependencies
+├── Dockerfile            # Application image
+├── docker-compose.yml    # Web + MySQL stack
+├── docker/entrypoint.sh  # DB wait, migrations, then start server
 ├── .env.example          # Environment variable template
+├── .env.docker.example   # Env template tuned for Compose
 └── README.md
 ```
 
@@ -218,6 +223,146 @@ python manage.py runserver
 Default base URL: **http://127.0.0.1:8000/**
 
 Interactive API browsing is not enabled by default; use `curl`, Postman, or similar tools.
+
+---
+
+## Docker deployment
+
+Run the API and MySQL together with **Docker Compose**. The web container uses **Gunicorn**, waits for the database, runs migrations on startup, then serves the app on port **8000**.
+
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) (Compose v2: `docker compose` CLI)
+
+### Quick start (development)
+
+1. **Create a `.env` file** for Compose (gitignored):
+
+```bash
+cp .env.docker.example .env
+```
+
+Generate a real `SECRET_KEY` and paste it into `.env`.
+
+2. **Build and start** the stack:
+
+```bash
+docker compose up --build
+```
+
+3. **Open the API**: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+
+Run in the background:
+
+```bash
+docker compose up -d --build
+```
+
+View logs:
+
+```bash
+docker compose logs -f web
+```
+
+Stop and remove containers (keep database volume):
+
+```bash
+docker compose down
+```
+
+Stop and remove containers **and** the MySQL volume:
+
+```bash
+docker compose down -v
+```
+
+### How it works
+
+```mermaid
+flowchart TB
+  Host[Host :8000] --> Web[web container\nGunicorn + Django]
+  Web --> DB[(db container\nMySQL 8.4)]
+  Web --> Env[.env + compose environment]
+```
+
+| Service | Image / build | Role |
+|---------|----------------|------|
+| `db` | `mysql:8.4` | Database `django_db`, user `django` / password `django` |
+| `web` | `Dockerfile` | Django app; `DATABASE_URL` points at host `db` |
+
+`docker-compose.yml` sets:
+
+```env
+DATABASE_URL=mysql://django:django@db:3306/django_db
+```
+
+That overrides `DATABASE_URL` in `.env` so the app reaches MySQL on the internal Docker network (hostname `db`, not `127.0.0.1`).
+
+The entrypoint script (`docker/entrypoint.sh`) waits until Django can connect, runs `makemigrations` and `migrate`, then starts Gunicorn.
+
+### Useful Docker commands
+
+```bash
+# Rebuild after code or dependency changes
+docker compose up --build -d
+
+# Run Django management commands
+docker compose exec web python manage.py createsuperuser
+docker compose exec web python manage.py shell
+
+# Open a shell inside the web container
+docker compose exec web sh
+```
+
+### Production-style Compose
+
+Use the production override file (sets `DEBUG=False`, does not add dev-only options):
+
+```bash
+cp .env.docker.example .env
+# Edit .env: DEBUG=False, strong SECRET_KEY, real ALLOWED_HOSTS
+
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+| Setting | Development | Production |
+|---------|-------------|------------|
+| `DEBUG` | `True` | `False` |
+| `SECRET_KEY` | Unique dev key | Strong random key; never commit |
+| `ALLOWED_HOSTS` | `localhost,127.0.0.1` | Your public domain(s) |
+| MySQL port on host | Commented out (not exposed) | Keep commented out |
+| HTTPS | Optional locally | Terminate TLS at a reverse proxy (nginx, Traefik, cloud LB) |
+
+**Production checklist**
+
+1. Set `DEBUG=False` and production `ALLOWED_HOSTS` in `.env`.
+2. Use a new `SECRET_KEY` (see [Configuration](#configuration)).
+3. Change MySQL passwords in `docker-compose.yml` / use Docker secrets or an external managed database.
+4. Put a reverse proxy in front of Gunicorn for HTTPS.
+5. Do not commit `.env` or publish port `3306` unless required.
+6. Consider external MySQL (RDS, Cloud SQL) and set `DATABASE_URL` accordingly; you can run only the `web` service or remove the `db` service from Compose.
+
+### Connect to MySQL from your host (optional)
+
+In `docker-compose.yml`, uncomment under `db`:
+
+```yaml
+ports:
+  - "3306:3306"
+```
+
+Then connect with any client using `127.0.0.1:3306`, user `django`, password `django`, database `django_db`.
+
+### Troubleshooting (Docker)
+
+| Problem | What to try |
+|---------|-------------|
+| `web` exits immediately | `docker compose logs web` — often missing `.env` or invalid `SECRET_KEY` |
+| Database connection errors | Ensure `db` is healthy: `docker compose ps`; wait for healthcheck |
+| `ALLOWED_HOSTS` error when `DEBUG=False` | Add your domain or `localhost` to `ALLOWED_HOSTS` in `.env` |
+| Port 8000 in use | Change mapping to `"8080:8000"` under `web.ports` |
+| Stale schema | `docker compose exec web python manage.py migrate` |
+| Rebuild from scratch | `docker compose down -v && docker compose up --build` |
 
 ---
 

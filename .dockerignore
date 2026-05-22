@@ -1,0 +1,13 @@
+.venv
+.git
+.gitignore
+.idea
+__pycache__
+*.py[cod]
+.env
+.env.*
+!.env.example
+.DS_Store
+*.md
+.claude
+requirements-dev.txt

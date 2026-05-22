@@ -1,0 +1,37 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: django_db
+      MYSQL_USER: django
+      MYSQL_PASSWORD: django
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql_data:/var/lib/mysql
+    # Uncomment to connect from the host (e.g. MySQL Workbench):
+    # ports:
+    #   - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  web:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Host "db" is the MySQL service name on the Compose network
+      DATABASE_URL: mysql://django:django@db:3306/django_db
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
