@@ -49,6 +49,7 @@ Pinned versions live in `requirements.txt`. Summary:
 | Django REST Framework | 3.17.1 |
 | djangorestframework-simplejwt | 5.5.1 |
 | django-environ | 0.13.0 |
+| django-filter | 25.2 (v2 and v3 patient list) |
 | MySQL driver | mysqlclient 2.2.8 |
 
 ---
@@ -573,7 +574,7 @@ Router prefix: `/api/v2/`
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/v2/patient/` | List |
+| `GET` | `/api/v2/patient/` | List (supports query filters — see below) |
 | `POST` | `/api/v2/patient/` | Create (with linked user) |
 | `GET` | `/api/v2/patient/<id>/` | Retrieve |
 | `PUT` | `/api/v2/patient/<id>/` | Full update |
@@ -586,11 +587,31 @@ Router prefix: `/api/v2/`
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/v3/patient/` | List |
+| `GET` | `/api/v3/patient/` | List (supports query filters — see below) |
 | `POST` | `/api/v3/patient/` | Create (with linked user) |
 | `GET` | `/api/v3/patient/<id>/` | Retrieve by `id` |
 
 v3 does not expose update or delete on the generic retrieve route.
+
+**Query filters (v2 and v3 list)** — both use `PatientFilter` via `django-filter`:
+
+| Parameter | Lookups | Example |
+|-----------|---------|---------|
+| `gender` | exact | `?gender=M` |
+| `first_name` | exact, icontains | `?first_name__icontains=jane` |
+| `last_name` | exact, icontains | `?last_name=Doe` |
+| `phone_number` | exact | `?phone_number=87654321` |
+| `date_of_birth` | exact, gte, lte | `?date_of_birth__gte=1990-01-01` |
+
+```bash
+# v2
+curl "http://127.0.0.1:8000/api/v2/patient/?gender=F&last_name__icontains=doe" \
+  -H "Authorization: Bearer $TOKEN"
+
+# v3
+curl "http://127.0.0.1:8000/api/v3/patient/?gender=F&last_name__icontains=doe" \
+  -H "Authorization: Bearer $TOKEN"
+```
 
 ---
 
