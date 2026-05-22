@@ -18,7 +18,7 @@ from django.urls import path, include
 
 from rest_framework import routers
 
-from authenticator.views import AuthenticationCreateAPIView, AuthenticationRetrieveAPIView
+from authenticator.views import AuthenticationCreateAPIView, CurrentUserAPIView
 from patients import views
 from patients.generic_views import PatientGenericView, PatientRetrieveView
 from patients.view_set import PatientViewSet
@@ -41,7 +41,7 @@ urlpatterns = [
   path("api/v3/patient/<int:id>/", PatientRetrieveView.as_view()),
 
   path("api/auth/register/", AuthenticationCreateAPIView.as_view()),
-  path("api/auth/me/<str:username>", AuthenticationRetrieveAPIView.as_view()),
+  path("api/auth/me/", CurrentUserAPIView.as_view()),
 
   path("api/auth/login/", TokenObtainPairView.as_view()),
   path("api/auth/refresh/", TokenRefreshView.as_view()),

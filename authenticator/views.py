@@ -1,9 +1,9 @@
 from django.contrib.auth.models import User
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from authenticator.serializer import AuthenticationSerializer
+from authenticator.serializer import AuthenticationSerializer, UserProfileSerializer
 
 
 class AuthenticationCreateAPIView(generics.CreateAPIView):
@@ -33,7 +33,9 @@ class AuthenticationCreateAPIView(generics.CreateAPIView):
       )
 
 
-class AuthenticationRetrieveAPIView(generics.RetrieveAPIView):
-  serializer_class = AuthenticationSerializer
-  queryset = User.objects.all()
-  lookup_field = "username"
+class CurrentUserAPIView(generics.RetrieveAPIView):
+  serializer_class = UserProfileSerializer
+  permission_classes = [IsAuthenticated]
+
+  def get_object(self):
+    return self.request.user

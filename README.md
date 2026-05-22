@@ -465,11 +465,28 @@ Add the header to patient and other protected routes:
 Authorization: Bearer <access-token>
 ```
 
-### Look up a user by username
+### Current user profile
 
-**`GET /api/auth/me/<username>`**
+**`GET /api/auth/me/`**
 
-Returns serialized username/password fields (password is write-only on input; behavior on retrieve depends on serializer configuration).
+Requires a valid JWT. Returns the **authenticated** user (from the token), not a username in the URL.
+
+Example response:
+
+```json
+{
+  "id": 1,
+  "username": "jane.doe",
+  "email": "",
+  "first_name": "",
+  "last_name": "",
+  "is_active": true,
+  "date_joined": "2026-05-21T14:10:54.413358Z",
+  "last_login": "2026-05-21T15:00:00.123456Z"
+}
+```
+
+If the user has no linked patient record, `patient` is `null`.
 
 ---
 
@@ -533,7 +550,7 @@ The same **Patient** resource is exposed under three versioned styles:
 | `POST` | `/api/auth/register/` | Register username/password |
 | `POST` | `/api/auth/login/` | Obtain access + refresh JWT |
 | `POST` | `/api/auth/refresh/` | Refresh access token |
-| `GET` | `/api/auth/me/<username>` | Retrieve user by username |
+| `GET` | `/api/auth/me/` | Current user profile + linked patient (JWT required) |
 
 ---
 
