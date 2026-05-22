@@ -159,6 +159,8 @@ Settings are loaded from a `.env` file at the project root using **django-enviro
 | `ALLOWED_HOSTS` | Yes | Comma-separated hostnames the app will serve | `localhost,127.0.0.1` | Your domain(s), e.g. `api.example.com` |
 | `JWT_ACCESS_TOKEN_LIFETIME_MINUTES` | No | How long the **access** token works (default `60`) | `60` | Shorter in production if possible (e.g. `15–30`) |
 | `JWT_REFRESH_TOKEN_LIFETIME_DAYS` | No | How long the **refresh** token works (default `7`) | `7` | `1–30` depending on security policy |
+| `PATIENT_PAGE_SIZE` | No | Default page size for v2/v3 patient list | `10` | `10–50` typical |
+| `PATIENT_MAX_PAGE_SIZE` | No | Max `page_size` query param | `100` | `100` or lower |
 
 Copy the template and edit locally:
 
@@ -574,7 +576,7 @@ Router prefix: `/api/v2/`
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/v2/patient/` | List (supports query filters — see below) |
+| `GET` | `/api/v2/patient/` | List (filters + pagination — see below) |
 | `POST` | `/api/v2/patient/` | Create (with linked user) |
 | `GET` | `/api/v2/patient/<id>/` | Retrieve |
 | `PUT` | `/api/v2/patient/<id>/` | Full update |
@@ -587,13 +589,13 @@ Router prefix: `/api/v2/`
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/v3/patient/` | List (supports query filters — see below) |
+| `GET` | `/api/v3/patient/` | List (filters + pagination — see below) |
 | `POST` | `/api/v3/patient/` | Create (with linked user) |
 | `GET` | `/api/v3/patient/<id>/` | Retrieve by `id` |
 
 v3 does not expose update or delete on the generic retrieve route.
 
-**Query filters (v2 and v3 list)** — both use `PatientFilter` via `django-filter`:
+**Query filters (v2 and v3 list)** — `PatientFilter` via `filter_backends` + `filterset_class`:
 
 | Parameter | Lookups | Example |
 |-----------|---------|---------|
@@ -603,15 +605,42 @@ v3 does not expose update or delete on the generic retrieve route.
 | `phone_number` | exact | `?phone_number=87654321` |
 | `date_of_birth` | exact, gte, lte | `?date_of_birth__gte=1990-01-01` |
 
+**Pagination (v2 and v3 list)** — `pagination_class = PatientPagination` (`PageNumberPagination`):
+
+| Query param | Description | Default |
+|-------------|-------------|---------|
+| `page` | Page number (1-based) | `1` |
+| `page_size` | Items per page (max `PATIENT_MAX_PAGE_SIZE`) | `PATIENT_PAGE_SIZE` (10) |
+
+List responses are **not** a bare array. Example:
+
+```json
+{
+  "count": 42,
+  "next": "http://127.0.0.1:8000/api/v2/patient/?page=2",
+  "previous": null,
+  "results": [{ "id": 1, "first_name": "Jane", ... }]
+}
+```
+
+Configure defaults in `.env`:
+
+```env
+PATIENT_PAGE_SIZE=10
+PATIENT_MAX_PAGE_SIZE=100
+```
+
 ```bash
-# v2
-curl "http://127.0.0.1:8000/api/v2/patient/?gender=F&last_name__icontains=doe" \
+# v2 — filter + page 2, 5 per page
+curl "http://127.0.0.1:8000/api/v2/patient/?gender=F&page=2&page_size=5" \
   -H "Authorization: Bearer $TOKEN"
 
 # v3
-curl "http://127.0.0.1:8000/api/v3/patient/?gender=F&last_name__icontains=doe" \
+curl "http://127.0.0.1:8000/api/v3/patient/?last_name__icontains=doe&page=1" \
   -H "Authorization: Bearer $TOKEN"
 ```
+
+v1 list still returns an unpaginated JSON array.
 
 ---
 

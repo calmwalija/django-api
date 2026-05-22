@@ -53,6 +53,10 @@ REST_FRAMEWORK = {
   ),
 }
 
+# Patient list pagination (v2 / v3)
+PATIENT_PAGE_SIZE = env.int('PATIENT_PAGE_SIZE', default=10)
+PATIENT_MAX_PAGE_SIZE = env.int('PATIENT_MAX_PAGE_SIZE', default=100)
+
 # Simple JWT — lifetimes configurable via .env (see .env.example)
 SIMPLE_JWT = {
   "ACCESS_TOKEN_LIFETIME": timedelta(
