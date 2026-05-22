@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -6,6 +7,7 @@ from rest_framework.response import Response
 from authenticator.serializer import AuthenticationSerializer, UserProfileSerializer
 
 
+@extend_schema(tags=['Auth'])
 class AuthenticationCreateAPIView(generics.CreateAPIView):
   serializer_class = AuthenticationSerializer
   permission_classes = [AllowAny]
@@ -33,6 +35,7 @@ class AuthenticationCreateAPIView(generics.CreateAPIView):
       )
 
 
+@extend_schema(tags=['Auth'])
 class CurrentUserAPIView(generics.RetrieveAPIView):
   serializer_class = UserProfileSerializer
   permission_classes = [IsAuthenticated]

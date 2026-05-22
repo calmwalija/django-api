@@ -14,6 +14,7 @@ A Django REST API for managing **patient records** with **JWT authentication** a
 - [Configuration](#configuration)
 - [Database setup](#database-setup)
 - [Running the server](#running-the-server)
+- [API documentation (OpenAPI)](#api-documentation-openapi)
 - [Docker deployment](#docker-deployment)
 - [Authentication](#authentication)
 - [Patient data model](#patient-data-model)
@@ -35,6 +36,7 @@ A Django REST API for managing **patient records** with **JWT authentication** a
 - **Automatic user provisioning** when creating a patient (v2 and v3): generates a unique username and links it to the patient record
 - **Validation** for gender choices and local phone format (8 digits, starting with `8` or `9`)
 - **Multiple API styles** (v1 function views, v2 ViewSet, v3 generics) for learning and comparison
+- **OpenAPI docs** via drf-spectacular (Swagger UI + ReDoc)
 
 ---
 
@@ -50,6 +52,7 @@ Pinned versions live in `requirements.txt`. Summary:
 | djangorestframework-simplejwt | 5.5.1 |
 | django-environ | 0.13.0 |
 | django-filter | 25.2 (v2 and v3 patient list) |
+| drf-spectacular | 0.29.0 (OpenAPI / Swagger / ReDoc) |
 | MySQL driver | mysqlclient 2.2.8 |
 
 ---
@@ -69,6 +72,7 @@ DjangoApi/
 ├── docker-compose.yml    # Web + MySQL stack
 ├── docker/entrypoint.sh  # DB wait, migrations, then start server
 ├── .env.example          # Environment variable template
+# OpenAPI: /api/docs/, /api/redoc/, /api/schema/
 ├── .env.docker.example   # Env template tuned for Compose
 └── README.md
 ```
@@ -227,7 +231,39 @@ python manage.py runserver
 
 Default base URL: **http://127.0.0.1:8000/**
 
-Interactive API browsing is not enabled by default; use `curl`, Postman, or similar tools.
+See [API documentation (OpenAPI)](#api-documentation-openapi) for interactive Swagger UI, or use `curl` / Postman.
+
+---
+
+## API documentation (OpenAPI)
+
+[drf-spectacular](https://drf-spectacular.readthedocs.io/) generates an OpenAPI 3 schema from your DRF views.
+
+| URL | Description |
+|-----|-------------|
+| [http://127.0.0.1:8000/api/docs/](http://127.0.0.1:8000/api/docs/) | **Swagger UI** — try endpoints in the browser |
+| [http://127.0.0.1:8000/api/redoc/](http://127.0.0.1:8000/api/redoc/) | **ReDoc** — readable reference docs |
+| [http://127.0.0.1:8000/api/schema/](http://127.0.0.1:8000/api/schema/) | Raw OpenAPI schema (JSON/YAML) |
+
+### Authenticate in Swagger UI
+
+1. Call **`POST /api/auth/login/`** with username and password.
+2. Copy the **`access`** token from the response.
+3. Click **Authorize** (lock icon), enter: `Bearer <your-access-token>` (include the word `Bearer` and a space).
+4. Try protected routes (e.g. `GET /api/auth/me/`, patient list).
+
+Register (`POST /api/auth/register/`) does not require a token.
+
+### Export schema to a file
+
+```bash
+python manage.py spectacular --file openapi-schema.yaml
+python manage.py spectacular --validate --fail-on-warn
+```
+
+Configuration lives in `main/settings.py` under `SPECTACULAR_SETTINGS` (API title, JWT `bearerAuth` security scheme).
+
+In production, consider restricting public access to `/api/docs/` and `/api/schema/` if the API is not public.
 
 ---
 

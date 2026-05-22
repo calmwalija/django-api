@@ -42,6 +42,7 @@ INSTALLED_APPS = [
   'rest_framework',
   'rest_framework_simplejwt',
   'django_filters',
+  'drf_spectacular',
 ]
 
 REST_FRAMEWORK = {
@@ -51,6 +52,25 @@ REST_FRAMEWORK = {
   "DEFAULT_PERMISSION_CLASSES": (
     "rest_framework.permissions.IsAuthenticated",
   ),
+  "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+  "TITLE": "DjangoApi",
+  "DESCRIPTION": "Patient management REST API with JWT authentication.",
+  "VERSION": "1.0.0",
+  "SERVE_INCLUDE_SCHEMA": False,
+  "COMPONENT_SPLIT_REQUEST": True,
+  "SECURITY": [{"bearerAuth": []}],
+  "APPEND_COMPONENTS": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+      }
+    }
+  },
 }
 
 # Patient list pagination (v2 / v3)

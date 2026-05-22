@@ -23,6 +23,12 @@ from patients import views
 from patients.generic_views import PatientGenericView, PatientRetrieveView
 from patients.view_set import PatientViewSet
 
+from drf_spectacular.views import (
+  SpectacularAPIView,
+  SpectacularRedocView,
+  SpectacularSwaggerView,
+)
+
 from rest_framework_simplejwt.views import (
   TokenObtainPairView,
   TokenRefreshView,
@@ -46,4 +52,7 @@ urlpatterns = [
   path("api/auth/login/", TokenObtainPairView.as_view()),
   path("api/auth/refresh/", TokenRefreshView.as_view()),
 
+  path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+  path("api/docs/", SpectacularSwaggerView.as_view(), name="swagger-ui"),
+  path("api/redoc/", SpectacularRedocView.as_view(), name="redoc"),
 ]
