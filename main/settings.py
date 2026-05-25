@@ -33,6 +33,7 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 INSTALLED_APPS = [
   'patients',
   'authenticator',
+  'keycloak',
   'django.contrib.admin',
   'django.contrib.auth',
   'django.contrib.contenttypes',

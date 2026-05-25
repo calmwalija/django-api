@@ -29,10 +29,7 @@ from drf_spectacular.views import (
   SpectacularSwaggerView,
 )
 
-from rest_framework_simplejwt.views import (
-  TokenObtainPairView,
-  TokenRefreshView,
-)
+from keycloak.views import KeycloakLoginView, KeycloakRefreshView
 
 router = routers.DefaultRouter()
 router.register("patient", PatientViewSet)
@@ -49,8 +46,8 @@ urlpatterns = [
   path("api/auth/register/", AuthenticationCreateAPIView.as_view()),
   path("api/auth/me/", CurrentUserAPIView.as_view()),
 
-  path("api/auth/login/", TokenObtainPairView.as_view()),
-  path("api/auth/refresh/", TokenRefreshView.as_view()),
+  path("api/auth/login/", KeycloakLoginView.as_view()),
+  path("api/auth/refresh/", KeycloakRefreshView.as_view()),
 
   path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
   path("api/docs/", SpectacularSwaggerView.as_view(), name="swagger-ui"),
