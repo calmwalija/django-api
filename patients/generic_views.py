@@ -2,6 +2,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
+from keycloak.authentication import KeycloakAuthentication
 from patients.filters import PatientFilter
 from patients.pagination import PatientPagination
 from patients.models import Patient
@@ -11,6 +12,7 @@ from utils.utils import perform_create
 
 class PatientGenericView(generics.ListCreateAPIView):
   serializer_class = PatientSerializer
+  authentication_classes = [KeycloakAuthentication]
   permission_classes = [IsAuthenticated]
   queryset = Patient.objects.all()
   filter_backends = [DjangoFilterBackend]
@@ -24,5 +26,6 @@ class PatientGenericView(generics.ListCreateAPIView):
 class PatientRetrieveView(generics.RetrieveAPIView):
   queryset = Patient.objects.all()
   serializer_class = PatientSerializer
+  authentication_classes = [KeycloakAuthentication]
   permission_classes = [IsAuthenticated]
   lookup_field = "id"
